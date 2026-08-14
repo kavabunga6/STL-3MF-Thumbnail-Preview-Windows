@@ -38,6 +38,12 @@ foreach ($root in @($thumbnailBackupRoot,$legacyBackupRoot)) {
     }
 }
 Remove-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Explorer3DPreview' -Recurse -Force -ErrorAction SilentlyContinue
+$approvedExtensions = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved'
+if (Test-Path $approvedExtensions) {
+    foreach ($classId in $ourClassIds) {
+        Remove-ItemProperty -Path $approvedExtensions -Name $classId -ErrorAction SilentlyContinue
+    }
+}
 
 foreach ($installedComHost in @(Get-ChildItem -LiteralPath $installDirectory -Filter 'Explorer3DPreview.comhost.dll' `
     -File -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -Unique)) {

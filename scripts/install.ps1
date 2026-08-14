@@ -10,7 +10,7 @@ $oldPreviewClassIds = @('{F1A470E4-6AA0-45FC-BE6F-A93E420A7BD7}','{025DEA72-D29D
 $thumbnailInterface = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $previewInterface = '{8895B1C6-B41F-4C1C-A562-0D564250836F}'
 $installDirectory = Join-Path $env:ProgramFiles 'Explorer3DPreview'
-$packageVersion = '1.2.3'
+$packageVersion = '1.2.4'
 $packagesDirectory = Join-Path $installDirectory 'packages'
 # Explorer may keep the current COM host loaded for the whole session. Deploying each
 # install to a fresh directory makes repair/reinstall safe without killing Explorer.
@@ -136,6 +136,13 @@ foreach ($handler in @(
     New-ItemProperty -Path $inprocKey -Name 'ThreadingModel' -Value 'Apartment' -PropertyType String -Force | Out-Null
 }
 
+$approvedExtensions = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved'
+if (-not (Test-Path $approvedExtensions)) { New-Item -Path $approvedExtensions -Force | Out-Null }
+New-ItemProperty -Path $approvedExtensions -Name $meshClassId -Value 'STL & 3MF Mesh Thumbnail Provider' `
+    -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $approvedExtensions -Name $embeddedClassId -Value 'SOLIDWORKS Embedded Thumbnail Provider' `
+    -PropertyType String -Force | Out-Null
+
 function Save-And-SetThumbnailAssociation {
     param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$ClassId,
         [Parameter(Mandatory)][string]$BackupName)
@@ -177,7 +184,9 @@ foreach ($extension in $selectedExtensions) {
     }
     $existing = @($paths | Where-Object { Test-Path $_ } | ForEach-Object { (Get-Item $_).GetValue('') } |
         Where-Object { $null -ne $_ -and $_ -notin @($meshClassId,$embeddedClassId) -and $_ -notin $oldThumbnailClassIds })
-    if ($existing.Count -gt 0) {
+    # Formats rendered by this application must use our provider when selected.
+    # Preserve third-party providers only for embedded SOLIDWORKS/eDrawings files.
+    if ($existing.Count -gt 0 -and $extension -in $embeddedExtensions) {
         $preservedCount++
         continue
     }
@@ -226,7 +235,7 @@ Set-Content -LiteralPath (Join-Path $installDirectory 'current-package.txt') -Va
 Get-ChildItem -LiteralPath $packagesDirectory -Directory -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -ne $versionDirectory } |
     ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
-# Remove pre-1.2.3 version folders when they are not held by an older Shell process.
+# Remove pre-1.2.4 version folders when they are not held by an older Shell process.
 Get-ChildItem -LiteralPath $installDirectory -Directory -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -ne 'packages' } |
     ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
@@ -236,10 +245,32 @@ using System;
 using System.Runtime.InteropServices;
 public static class Explorer3DShellNotify {
     [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool MoveFileEx(string existingFile, IntPtr replacementFile, int flags);
 }
 '@
 # SHCNE_ASSOCCHANGED invalidates the icon/thumbnail cache. SHCNF_FLUSH waits
 # until open Explorer windows have processed the new handler registration.
 [Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
 Start-Sleep -Milliseconds 750
+
+# Existing negative thumbnail entries survive Explorer restarts. Schedule only
+# Windows' regenerable thumbnail databases for deletion during the next reboot,
+# before Explorer and its COM surrogate start again.
+$thumbnailCacheDirectory = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Explorer'))
+$localAppDataRoot = [IO.Path]::GetFullPath($env:LOCALAPPDATA)
+if (-not $thumbnailCacheDirectory.StartsWith($localAppDataRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Unexpected Windows thumbnail cache path.'
+}
+foreach ($cacheFile in @(Get-ChildItem -LiteralPath $thumbnailCacheDirectory -File -Filter 'thumbcache_*.db' `
+    -ErrorAction SilentlyContinue)) {
+    $expectedPrefix = $thumbnailCacheDirectory + [IO.Path]::DirectorySeparatorChar
+    if (-not $cacheFile.FullName.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Unsafe thumbnail cache path: $($cacheFile.FullName)"
+    }
+    if (-not [Explorer3DShellNotify]::MoveFileEx($cacheFile.FullName, [IntPtr]::Zero, 4)) {
+        Write-Warning "Could not schedule thumbnail cache cleanup: $($cacheFile.FullName)"
+    }
+}
 Write-Host "Installed: $registeredCount thumbnail providers added; $preservedCount existing providers preserved." -ForegroundColor Green

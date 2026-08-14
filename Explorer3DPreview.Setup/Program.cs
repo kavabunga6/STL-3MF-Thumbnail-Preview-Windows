@@ -285,12 +285,28 @@ internal sealed class InstallerForm : Form
             if (process.ExitCode != 0) throw new InvalidOperationException(string.IsNullOrWhiteSpace(error) ? output : error);
 
             _progress.Visible = false;
-            _status.Text = $"Готово. Выбрано расширений: {selected.Length}. В Проводнике включите крупные значки.";
+            _status.Text = $"Готово. Выбрано расширений: {selected.Length}. Требуется перезагрузка Windows.";
             _status.ForeColor = Color.FromArgb(30, 125, 74);
-            _closeButton.Text = "Закрыть";
+            _closeButton.Text = "Позже";
             _closeButton.Enabled = true;
             _installButton.Visible = false;
             AcceptButton = _closeButton;
+            var restartNow = MessageBox.Show(this,
+                "Установка завершена. Чтобы Windows выгрузила старый COM-обработчик и пересоздала кэш миниатюр, " +
+                "необходимо перезагрузить компьютер. Перезагрузить сейчас?",
+                "Требуется перезагрузка", MessageBoxButtons.YesNo, MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            if (restartNow)
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "shutdown.exe"),
+                    Arguments = "/r /t 0",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                Close();
+            }
         }
         catch (Exception exception)
         {
