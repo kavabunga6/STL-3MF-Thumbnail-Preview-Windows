@@ -27,10 +27,11 @@ The installer preserves an existing SOLIDWORKS/eDrawings thumbnail provider. If 
 
 ## Installation
 
-1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.3.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).
+1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.4.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).
 2. Select the extensions to handle.
 3. Confirm the Windows UAC prompt.
-4. Use Large icons or Extra large icons in File Explorer.
+4. Restart Windows when prompted so the old COM surrogate is unloaded and the thumbnail cache is rebuilt.
+5. Use Large icons or Extra large icons in File Explorer.
 
 The installer is currently unsigned, so Microsoft Defender SmartScreen may display an unknown-publisher warning.
 
@@ -61,7 +62,7 @@ Requirements: Windows x64 and .NET 6 SDK.
 .\scripts\build-installer.ps1
 ```
 
-The installer is written to `artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.3.exe`.
+The installer is written to `artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.4.exe`.
 
 Run the smoke tests:
 

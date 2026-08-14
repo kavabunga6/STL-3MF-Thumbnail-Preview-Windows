@@ -134,7 +134,7 @@ static void TestInvalid(string directory)
 
 static void TestThumbnailProvider(string directory)
 {
-    var path = Path.Combine(directory, "thumbnail-smoke.stl");
+    var path = Path.Combine(directory, "thumbnail-smoke.STL");
     File.WriteAllText(path, @"solid test
 facet normal 0 0 1
 outer loop
@@ -211,7 +211,7 @@ static void TestAdditionalFormats(string directory)
         "</vertices><volume><triangle><v1>0</v1><v2>1</v2><v3>2</v3></triangle></volume></mesh></object></amf>");
     Assert(MeshFileLoader.Read(amf).Triangles.Count == 1, "AMF");
 
-    var threeMf = Path.Combine(directory, "triangle.3mf");
+    var threeMf = Path.Combine(directory, "triangle.3MF");
     using (var archive = ZipFile.Open(threeMf, ZipArchiveMode.Create))
     using (var writer = new StreamWriter(archive.CreateEntry("3D/3dmodel.model").Open()))
         writer.Write("<model><resources><object id=\"1\"><mesh><vertices>" +
