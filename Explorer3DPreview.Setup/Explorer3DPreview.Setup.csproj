@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>Explorer3DPreview-Setup</AssemblyName>
+    <RootNamespace>Explorer3DPreview.Setup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\assets\Explorer3DPreview.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>embedded</DebugType>
+    <Version>1.2.2</Version>
+    <AssemblyTitle>Explorer 3D Thumbnails Setup</AssemblyTitle>
+    <Product>Explorer 3D Thumbnails</Product>
+    <Company>Explorer 3D Thumbnails</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\Explorer3DPreview\bin\x64\$(Configuration)\net6.0-windows\Explorer3DPreview.comhost.dll"
+                      LogicalName="Payload.Explorer3DPreview.comhost.dll" />
+    <EmbeddedResource Include="..\Explorer3DPreview\bin\x64\$(Configuration)\net6.0-windows\Explorer3DPreview.deps.json"
+                      LogicalName="Payload.Explorer3DPreview.deps.json" />
+    <EmbeddedResource Include="..\Explorer3DPreview\bin\x64\$(Configuration)\net6.0-windows\Explorer3DPreview.dll"
+                      LogicalName="Payload.Explorer3DPreview.dll" />
+    <EmbeddedResource Include="..\Explorer3DPreview\bin\x64\$(Configuration)\net6.0-windows\Explorer3DPreview.runtimeconfig.json"
+                      LogicalName="Payload.Explorer3DPreview.runtimeconfig.json" />
+    <EmbeddedResource Include="..\scripts\install.ps1" LogicalName="Payload.install.ps1" />
+    <EmbeddedResource Include="..\scripts\uninstall.ps1" LogicalName="Payload.uninstall.ps1" />
+    <EmbeddedResource Include="..\assets\Explorer3DPreview.ico" LogicalName="Payload.Explorer3DPreview.ico" />
+  </ItemGroup>
+</Project>
