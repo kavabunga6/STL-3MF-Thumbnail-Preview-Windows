@@ -207,9 +207,9 @@ $uninstallCommand = "`"$powerShellExe`" -NoProfile -ExecutionPolicy Bypass -File
 $displayIcon = Join-Path $versionDirectory 'Explorer3DPreview.ico'
 $installedSizeKb = [Math]::Ceiling(((Get-ChildItem $installDirectory -File -Recurse | Measure-Object Length -Sum).Sum) / 1KB)
 New-Item -Path $uninstallKey -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'Explorer 3D Thumbnails' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'STL & 3MF Thumbnail Preview for Windows' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'DisplayVersion' -Value $packageVersion -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'Explorer 3D Thumbnails' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'STL & 3MF Thumbnail Preview' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'InstallLocation' -Value $installDirectory -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'DisplayIcon' -Value $displayIcon -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'UninstallString' -Value $uninstallCommand -PropertyType String -Force | Out-Null

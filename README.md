@@ -1,10 +1,10 @@
-# Explorer 3D Thumbnails
+# STL & 3MF Thumbnail Preview for Windows
 
-Native 3D-model thumbnails directly in Windows 10/11 File Explorer.
+Fast STL, 3MF, OBJ, PLY, G-code and SOLIDWORKS thumbnail previews directly in Windows 10/11 File Explorer.
 
-[Download the latest installer](https://github.com/kavabunga6/Explorer3DThumbnails/releases/latest)
+[Download the latest installer](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest)
 
-Explorer 3D Thumbnails is a lightweight x64 `IThumbnailProvider`. It renders supported mesh and 3D-printing files locally and returns a static bitmap to Explorer's thumbnail cache. It does not open a preview window and never starts SOLIDWORKS while browsing folders.
+STL & 3MF Thumbnail Preview for Windows is a lightweight x64 `IThumbnailProvider`. It renders supported mesh and 3D-printing files locally and returns a static bitmap to Explorer's thumbnail cache. It does not open a preview window and never starts SOLIDWORKS while browsing folders.
 
 ## Supported formats
 
@@ -29,7 +29,7 @@ Neutral and third-party CAD extensions such as STEP, IGES, Parasolid, ACIS, IFC,
 
 ## Installation
 
-1. Download `Explorer3DThumbnails-Setup-1.2.3.exe` from the [latest release](https://github.com/kavabunga6/Explorer3DThumbnails/releases/latest).
+1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.3.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).
 2. Select the extensions to handle.
 3. Confirm the Windows UAC prompt.
 4. Use Large icons or Extra large icons in File Explorer.
@@ -63,7 +63,7 @@ Requirements: Windows x64 and .NET 6 SDK.
 .\scripts\build-installer.ps1
 ```
 
-The installer is written to `artifacts\Explorer3DThumbnails-Setup-1.2.3.exe`.
+The installer is written to `artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.3.exe`.
 
 Run the smoke tests:
 
@@ -86,9 +86,9 @@ Previous thumbnail associations are restored during uninstall.
 
 ## Русский
 
-Explorer 3D Thumbnails показывает миниатюры STL, 3MF, OBJ, PLY, AMF, OFF и G-code прямо в списке файлов Проводника Windows. Обработчик работает через системный `IThumbnailProvider`, не открывает отдельное окно и не запускает SOLIDWORKS при просмотре папки.
+STL & 3MF Thumbnail Preview for Windows показывает миниатюры STL, 3MF, OBJ, PLY, AMF, OFF и G-code прямо в списке файлов Проводника Windows. Обработчик работает через системный `IThumbnailProvider`, не открывает отдельное окно и не запускает SOLIDWORKS при просмотре папки.
 
-Скачайте EXE из раздела [Releases](https://github.com/kavabunga6/Explorer3DThumbnails/releases/latest), выберите расширения и подтвердите UAC. После установки включите в Проводнике крупные или огромные значки.
+Скачайте EXE из раздела [Releases](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest), выберите расширения и подтвердите UAC. После установки включите в Проводнике крупные или огромные значки.
 
 ## License
 

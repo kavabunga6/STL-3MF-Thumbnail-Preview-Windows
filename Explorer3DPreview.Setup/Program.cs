@@ -70,7 +70,7 @@ internal sealed class InstallerForm : Form
 
     public InstallerForm()
     {
-        Text = "Установка Explorer 3D Thumbnails";
+        Text = "Установка STL & 3MF Thumbnail Preview";
         ClientSize = new Size(720, 610);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -83,8 +83,9 @@ internal sealed class InstallerForm : Form
 
         var title = new Label
         {
-            Text = "Explorer 3D Thumbnails", Location = new Point(32, 24), Size = new Size(650, 38),
-            Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Color.FromArgb(25, 40, 56)
+            Text = "STL & 3MF Thumbnail Preview", Location = new Point(32, 24), Size = new Size(650, 38),
+            Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Color.FromArgb(25, 40, 56),
+            UseMnemonic = false
         };
         var description = new Label
         {

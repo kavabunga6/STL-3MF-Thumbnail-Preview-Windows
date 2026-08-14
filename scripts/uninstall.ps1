@@ -61,4 +61,4 @@ public static class Explorer3DShellNotify {
 }
 '@
 [Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
-Write-Host 'Explorer 3D thumbnail handlers were removed.' -ForegroundColor Green
+Write-Host 'STL & 3MF Thumbnail Preview handlers were removed.' -ForegroundColor Green
