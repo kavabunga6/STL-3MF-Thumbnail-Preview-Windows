@@ -2,6 +2,7 @@
 param([string]$ExtensionsFile)
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $meshClassId = '{16EAEC3D-A095-4F3D-9D29-FEAC9D26520D}'
 $embeddedClassId = '{961034D4-4D2D-4AD2-AE59-0672E6A3AF99}'
 $oldThumbnailClassIds = @('{A3D8F82E-0B62-49C7-A20E-A1566F8B4271}','{49724923-52F5-40E4-A743-3F8904BDFF91}')
@@ -9,7 +10,11 @@ $oldPreviewClassIds = @('{F1A470E4-6AA0-45FC-BE6F-A93E420A7BD7}','{025DEA72-D29D
 $thumbnailInterface = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $previewInterface = '{8895B1C6-B41F-4C1C-A562-0D564250836F}'
 $installDirectory = Join-Path $env:ProgramFiles 'Explorer3DPreview'
-$versionDirectory = Join-Path $installDirectory '1.2.2'
+$packageVersion = '1.2.3'
+$packagesDirectory = Join-Path $installDirectory 'packages'
+# Explorer may keep the current COM host loaded for the whole session. Deploying each
+# install to a fresh directory makes repair/reinstall safe without killing Explorer.
+$versionDirectory = Join-Path $packagesDirectory ("$packageVersion-$([Guid]::NewGuid().ToString('N'))")
 $thumbnailBackupRoot = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Explorer3DPreview\ThumbnailBackup'
 $legacyBackupRoot = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Explorer3DPreview\AssociationBackup'
 
@@ -38,12 +43,12 @@ if (-not $runtimeInstalled) {
 
 $directExtensions = @('.stl','.3mf','.obj','.ply','.amf','.off','.gcode','.gco')
 $embeddedExtensions = @('.sldprt','.sdlprt','.sldasm','.slddrw','.prtdot','.asmdot','.drwdot','.eprt','.easm','.edrw')
-$externalExtensions = @(
+$legacyCleanupExtensions = @(
     '.step','.stp','.stpz','.iges','.igs','.x_t','.x_b','.xmt_txt','.xmt_bin','.sat','.sab',
     '.ifc','.vda','.wrl','.vrml','.3dxml','.jt','.3dm','.catpart','.catproduct','.ipt','.iam',
     '.prt','.asm','.neu','.xpr','.xas','.par','.psm','.pwd','.dxf','.dwg'
 )
-$allExtensions = @($directExtensions + $embeddedExtensions + $externalExtensions)
+$allExtensions = @($directExtensions + $embeddedExtensions)
 
 $selectionStore = Join-Path $installDirectory 'extensions.txt'
 if (-not [string]::IsNullOrWhiteSpace($ExtensionsFile) -and (Test-Path -LiteralPath $ExtensionsFile)) {
@@ -79,7 +84,7 @@ if (Test-Path $legacyBackupRoot) {
     Get-ChildItem $legacyBackupRoot | ForEach-Object { Restore-BackupKey -BackupKey $_ -OurClassIds $oldPreviewClassIds }
     Remove-Item -Path $legacyBackupRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
-foreach ($extension in $allExtensions) {
+foreach ($extension in @($allExtensions + $legacyCleanupExtensions)) {
     $extensionKey = "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Classes\$extension"
     $progId = if (Test-Path $extensionKey) { (Get-Item $extensionKey).GetValue('') } else { $null }
     $paths = @(
@@ -107,6 +112,7 @@ if (-not (Test-Path -LiteralPath $sourceComHost)) {
     throw 'Explorer3DPreview.comhost.dll is missing. Run scripts\build.ps1 first.'
 }
 New-Item -ItemType Directory -Path $installDirectory -Force | Out-Null
+New-Item -ItemType Directory -Path $packagesDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $versionDirectory -Force | Out-Null
 Copy-Item -Path (Join-Path $PSScriptRoot 'Explorer3DPreview*') -Destination $versionDirectory -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall.ps1') -Destination $installDirectory -Force
@@ -148,7 +154,7 @@ function Save-And-SetThumbnailAssociation {
     Set-Item -Path $Path -Value $ClassId
 }
 
-foreach ($extension in $allExtensions) {
+foreach ($extension in @($allExtensions + $legacyCleanupExtensions)) {
     if ($selectedExtensions -contains $extension) { continue }
     $safeName = $extension.TrimStart('.')
     if (Test-Path $thumbnailBackupRoot) {
@@ -201,9 +207,9 @@ $uninstallCommand = "`"$powerShellExe`" -NoProfile -ExecutionPolicy Bypass -File
 $displayIcon = Join-Path $versionDirectory 'Explorer3DPreview.ico'
 $installedSizeKb = [Math]::Ceiling(((Get-ChildItem $installDirectory -File -Recurse | Measure-Object Length -Sum).Sum) / 1KB)
 New-Item -Path $uninstallKey -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'Explorer 3D Thumbnails' -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'DisplayVersion' -Value '1.2.2' -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'Explorer 3D Thumbnails' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'STL & 3MF Thumbnail Preview for Windows' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'DisplayVersion' -Value $packageVersion -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'STL & 3MF Thumbnail Preview' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'InstallLocation' -Value $installDirectory -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'DisplayIcon' -Value $displayIcon -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'UninstallString' -Value $uninstallCommand -PropertyType String -Force | Out-Null
@@ -214,6 +220,17 @@ New-ItemProperty -Path $uninstallKey -Name 'NoModify' -Value 1 -PropertyType DWo
 New-ItemProperty -Path $uninstallKey -Name 'NoRepair' -Value 1 -PropertyType DWord -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'SelectedExtensions' -Value ($selectedExtensions -join ';') -PropertyType String -Force | Out-Null
 
+# Remember the active package, then clean up copies that are no longer loaded. A
+# locked previous package is harmless and will be retried on the next install.
+Set-Content -LiteralPath (Join-Path $installDirectory 'current-package.txt') -Value $versionDirectory -Encoding ASCII
+Get-ChildItem -LiteralPath $packagesDirectory -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -ne $versionDirectory } |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+# Remove pre-1.2.3 version folders when they are not held by an older Shell process.
+Get-ChildItem -LiteralPath $installDirectory -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -ne 'packages' } |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -221,5 +238,8 @@ public static class Explorer3DShellNotify {
     [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
 '@
-[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
+# SHCNE_ASSOCCHANGED invalidates the icon/thumbnail cache. SHCNF_FLUSH waits
+# until open Explorer windows have processed the new handler registration.
+[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+Start-Sleep -Milliseconds 750
 Write-Host "Installed: $registeredCount thumbnail providers added; $preservedCount existing providers preserved." -ForegroundColor Green

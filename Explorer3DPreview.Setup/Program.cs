@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 
 namespace Explorer3DPreview.Setup;
 
@@ -69,7 +70,7 @@ internal sealed class InstallerForm : Form
 
     public InstallerForm()
     {
-        Text = "Установка Explorer 3D Thumbnails";
+        Text = "Установка STL & 3MF Thumbnail Preview";
         ClientSize = new Size(720, 610);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -82,8 +83,9 @@ internal sealed class InstallerForm : Form
 
         var title = new Label
         {
-            Text = "Explorer 3D Thumbnails", Location = new Point(32, 24), Size = new Size(650, 38),
-            Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Color.FromArgb(25, 40, 56)
+            Text = "STL & 3MF Thumbnail Preview", Location = new Point(32, 24), Size = new Size(650, 38),
+            Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Color.FromArgb(25, 40, 56),
+            UseMnemonic = false
         };
         var description = new Label
         {
@@ -109,8 +111,8 @@ internal sealed class InstallerForm : Form
 
         var note = new Label
         {
-            Text = "Открытые сетки рендерятся локально. Штатные обработчики SOLIDWORKS/eDrawings сохраняются; " +
-                   "для остальных CAD используются только уже установленные лёгкие обработчики. SOLIDWORKS не запускается.",
+            Text = "Открытые сетки рендерятся локально. Для SOLIDWORKS/eDrawings извлекается встроенная миниатюра; " +
+                   "уже установленный штатный обработчик сохраняется. SOLIDWORKS не запускается.",
             Location = new Point(35, 495), Size = new Size(650, 38), ForeColor = Color.FromArgb(95, 108, 122)
         };
         _status = new Label
@@ -270,7 +272,9 @@ internal sealed class InstallerForm : Form
                 FileName = powerShell,
                 Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{script}\" -ExtensionsFile \"{selectionFile}\"",
                 UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardOutput = true, RedirectStandardError = true
+                RedirectStandardOutput = true, RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
             };
             using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Не удалось запустить установку.");
             var outputTask = process.StandardOutput.ReadToEndAsync();

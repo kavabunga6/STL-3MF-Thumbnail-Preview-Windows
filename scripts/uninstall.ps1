@@ -2,6 +2,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $ourClassIds = @(
     '{16EAEC3D-A095-4F3D-9D29-FEAC9D26520D}','{961034D4-4D2D-4AD2-AE59-0672E6A3AF99}',
     '{A3D8F82E-0B62-49C7-A20E-A1566F8B4271}','{49724923-52F5-40E4-A743-3F8904BDFF91}'
@@ -46,7 +47,11 @@ foreach ($installedComHost in @(Get-ChildItem -LiteralPath $installDirectory -Fi
 Get-Process prevhost -ErrorAction SilentlyContinue | Stop-Process -Force
 Remove-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Explorer3DPreview' `
     -Recurse -Force -ErrorAction SilentlyContinue
-if (Test-Path -LiteralPath $installDirectory) { Remove-Item -LiteralPath $installDirectory -Recurse -Force }
+if (Test-Path -LiteralPath $installDirectory) {
+    # A COM host can remain mapped until Explorer/dllhost exits. Associations are
+    # already removed, so leftover locked binaries can be deleted after a restart.
+    Remove-Item -LiteralPath $installDirectory -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Add-Type -TypeDefinition @'
 using System;
@@ -55,5 +60,6 @@ public static class Explorer3DShellNotify {
     [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
 '@
-[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
-Write-Host 'Explorer 3D thumbnail handlers were removed.' -ForegroundColor Green
+[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+Start-Sleep -Milliseconds 750
+Write-Host 'STL & 3MF Thumbnail Preview handlers were removed.' -ForegroundColor Green
