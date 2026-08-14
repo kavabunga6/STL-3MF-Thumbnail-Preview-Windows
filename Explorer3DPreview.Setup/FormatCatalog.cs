@@ -15,6 +15,9 @@ internal static class FormatCatalog
         new("3D-печать — напрямую", ".gcode", "G-code траектории"),
         new("3D-печать — напрямую", ".gco", "G-code (короткое расширение)"),
 
+        new("CAD — облегчённый предпросмотр", ".step", "STEP: сетка или каркас B-rep"),
+        new("CAD — облегчённый предпросмотр", ".stp", "STEP (короткое расширение)"),
+
         new("SOLIDWORKS", ".sldprt", "Деталь SOLIDWORKS"),
         new("SOLIDWORKS", ".sdlprt", "Алиас/опечатка SLDPRT", false),
         new("SOLIDWORKS", ".sldasm", "Сборка SOLIDWORKS"),

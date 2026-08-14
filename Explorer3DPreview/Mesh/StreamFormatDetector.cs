@@ -29,6 +29,7 @@ internal static class StreamFormatDetector
             }
 
             var text = Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
+            if (text.StartsWith("ISO-10303-21", StringComparison.OrdinalIgnoreCase)) return ".step";
             if (text.StartsWith("ply", StringComparison.OrdinalIgnoreCase)) return ".ply";
             if (text.StartsWith("OFF", StringComparison.OrdinalIgnoreCase)) return ".off";
             if (text.Contains("<amf", StringComparison.OrdinalIgnoreCase)) return ".amf";

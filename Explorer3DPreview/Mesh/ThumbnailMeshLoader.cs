@@ -32,11 +32,27 @@ internal static class ThumbnailMeshLoader
 
     private static MeshData Sample(MeshData mesh, int limit)
     {
-        if (mesh.Triangles.Count <= limit) return mesh;
-        var sampled = new Triangle[limit];
-        var step = mesh.Triangles.Count / (double)limit;
-        for (var i = 0; i < sampled.Length; i++)
-            sampled[i] = mesh.Triangles[Math.Min(mesh.Triangles.Count - 1, (int)(i * step))];
-        return new MeshData(sampled);
+        var triangles = mesh.Triangles;
+        if (triangles.Count > limit)
+        {
+            var sampled = new Triangle[limit];
+            var step = triangles.Count / (double)limit;
+            for (var i = 0; i < sampled.Length; i++)
+                sampled[i] = triangles[Math.Min(triangles.Count - 1, (int)(i * step))];
+            triangles = sampled;
+        }
+
+        var segments = mesh.Segments;
+        if (segments.Count > limit)
+        {
+            var sampled = new LineSegment[limit];
+            var step = segments.Count / (double)limit;
+            for (var i = 0; i < sampled.Length; i++)
+                sampled[i] = segments[Math.Min(segments.Count - 1, (int)(i * step))];
+            segments = sampled;
+        }
+        return triangles == mesh.Triangles && segments == mesh.Segments
+            ? mesh
+            : new MeshData(triangles, segments);
     }
 }

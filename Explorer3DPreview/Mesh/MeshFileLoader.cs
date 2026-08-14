@@ -4,7 +4,7 @@ internal static class MeshFileLoader
 {
     internal static readonly HashSet<string> DirectExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".stl", ".obj", ".ply", ".off", ".amf", ".3mf", ".gcode", ".gco"
+        ".stl", ".obj", ".ply", ".off", ".amf", ".3mf", ".gcode", ".gco", ".step", ".stp"
     };
 
     internal static MeshData Read(string path) => Path.GetExtension(path).ToLowerInvariant() switch
@@ -16,6 +16,7 @@ internal static class MeshFileLoader
         ".amf" => AmfReader.Read(path),
         ".3mf" => ThreeMfReader.Read(path),
         ".gcode" or ".gco" => GCodeReader.Read(path),
+        ".step" or ".stp" => StepReader.Read(path),
         _ => throw new NotSupportedException("Для этого формата требуется SolidWorks.")
     };
 
@@ -28,6 +29,7 @@ internal static class MeshFileLoader
         ".amf" => AmfReader.Read(stream),
         ".3mf" => ThreeMfReader.Read(stream),
         ".gcode" or ".gco" => GCodeReader.Read(stream),
+        ".step" or ".stp" => StepReader.Read(stream),
         _ => throw new NotSupportedException("Неизвестный формат потока.")
     };
 }

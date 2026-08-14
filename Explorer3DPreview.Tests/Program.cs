@@ -68,6 +68,7 @@ try
     TestBinary(testDirectory);
     TestInvalid(testDirectory);
     TestAdditionalFormats(testDirectory);
+    TestStep(testDirectory);
     TestThumbnailProvider(testDirectory);
     TestEmbeddedImageDecoder();
     Console.WriteLine("Все smoke-тесты форматов и Thumbnail Provider пройдены.");
@@ -230,6 +231,54 @@ static void TestAdditionalFormats(string directory)
         Assert(ThumbnailMeshLoader.Read(stream).Triangles.Count > 0,
             $"Stream thumbnail: {Path.GetExtension(streamPath)}");
     }
+}
+
+static void TestStep(string directory)
+{
+    var tessellated = Path.Combine(directory, "triangle.STEP");
+    File.WriteAllText(tessellated, @"ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('thumbnail test'),'2;1');
+ENDSEC;
+DATA;
+#1=COORDINATES_LIST('',3,((0.,0.,0.),(2.,0.,0.),(0.,3.,0.)));
+#2=TRIANGULATED_SURFACE_SET('',#1,3,(),(),((1,2,3)));
+ENDSEC;
+END-ISO-10303-21;", Encoding.ASCII);
+    var tessellatedMesh = MeshFileLoader.Read(tessellated);
+    Assert(tessellatedMesh.Triangles.Count == 1, "STEP AP242: triangulated surface set");
+    var provider = new MeshThumbnailProvider();
+    Assert(provider.Initialize(tessellated, 0) == 0, "STEP AP242: Thumbnail Provider Initialize");
+    Assert(provider.GetThumbnail(256, out var stepHandle, out _) == 0 && stepHandle != IntPtr.Zero,
+        "STEP AP242: Thumbnail Provider GetThumbnail");
+    NativeMethods.DeleteObject(stepHandle);
+
+    var wireframe = Path.Combine(directory, "circle.stp");
+    File.WriteAllText(wireframe, @"ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('thumbnail test'),'2;1');
+ENDSEC;
+DATA;
+#1=CARTESIAN_POINT('',(0.,0.,0.));
+#2=DIRECTION('',(0.,0.,1.));
+#3=DIRECTION('',(1.,0.,0.));
+#4=AXIS2_PLACEMENT_3D('',#1,#2,#3);
+#5=CARTESIAN_POINT('',(5.,0.,0.));
+#6=VERTEX_POINT('',#5);
+#7=CIRCLE('',#4,5.);
+#8=EDGE_CURVE('',#6,#6,#7,.T.);
+ENDSEC;
+END-ISO-10303-21;", Encoding.ASCII);
+    var wireframeMesh = MeshFileLoader.Read(wireframe);
+    Assert(wireframeMesh.Triangles.Count == 0 && wireframeMesh.Segments.Count >= 32,
+        "STEP B-rep: circle wireframe");
+    using (var stream = new FileStream(wireframe, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    {
+        var streamMesh = ThumbnailMeshLoader.Read(stream);
+        Assert(streamMesh.Segments.Count >= 32, "STEP B-rep: stream format detection");
+    }
+    using var image = Explorer3DPreview.UI.ThumbnailRenderer.Render(wireframeMesh, 256);
+    Assert(image.Width == 256 && image.Height == 256, "STEP B-rep: thumbnail render");
 }
 
 static void WriteVector(BinaryWriter writer, Vector3 value)

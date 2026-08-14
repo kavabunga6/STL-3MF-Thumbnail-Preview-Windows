@@ -11,6 +11,6 @@
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>Explorer3DPreview</AssemblyName>
     <RootNamespace>Explorer3DPreview</RootNamespace>
-    <Version>1.2.4</Version>
+    <Version>1.2.5</Version>
   </PropertyGroup>
 </Project>

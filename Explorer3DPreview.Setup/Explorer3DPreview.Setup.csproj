@@ -16,10 +16,10 @@
     <SelfContained>false</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>embedded</DebugType>
-    <Version>1.2.4</Version>
-    <AssemblyTitle>STL &amp; 3MF Thumbnail Preview Setup</AssemblyTitle>
-    <Product>STL &amp; 3MF Thumbnail Preview for Windows</Product>
-    <Company>STL &amp; 3MF Thumbnail Preview</Company>
+    <Version>1.2.5</Version>
+    <AssemblyTitle>STL, 3MF &amp; STEP Thumbnail Preview Setup</AssemblyTitle>
+    <Product>STL, 3MF &amp; STEP Thumbnail Preview for Windows</Product>
+    <Company>STL, 3MF &amp; STEP Thumbnail Preview</Company>
   </PropertyGroup>
 
   <ItemGroup>

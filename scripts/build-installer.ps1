@@ -7,10 +7,32 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $setupProject = Join-Path $root 'Explorer3DPreview.Setup\Explorer3DPreview.Setup.csproj'
+$setupProgram = Join-Path $root 'Explorer3DPreview.Setup\Program.cs'
+$installScript = Join-Path $PSScriptRoot 'install.ps1'
 $publishDirectory = Join-Path $root 'artifacts\setup-publish'
 $verifyDirectory = Join-Path $root 'artifacts\setup-verify'
-$installerPath = Join-Path $root 'artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.4.exe'
+$installerPath = Join-Path $root 'artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.5.exe'
 $legacyIExpressDirectory = Join-Path $root 'artifacts\installer-build'
+
+# Safety regression guard: installation must never terminate File Explorer.
+# Only the dedicated thumbnail-cache dllhost surrogate may be refreshed.
+$tokens = $null
+$parseErrors = $null
+$installAst = [Management.Automation.Language.Parser]::ParseFile(
+    $installScript, [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count -gt 0) {
+    throw "install.ps1 contains PowerShell parse errors: $($parseErrors[0].Message)"
+}
+$unsafePipelines = @($installAst.FindAll({
+    param($node)
+    $node -is [Management.Automation.Language.PipelineAst] -and
+    $node.Extent.Text -match '(?is)\b(?:Stop-Process|taskkill(?:\.exe)?)\b.*\bexplorer(?:\.exe)?\b'
+}, $true))
+$setupSource = Get-Content -LiteralPath $setupProgram -Raw
+$unsafeManagedExplorerStop = $setupSource -match '(?is)GetProcessesByName\s*\(\s*"explorer"\s*\).*?(?:Kill|CloseMainWindow)\s*\('
+if ($unsafePipelines.Count -gt 0 -or $unsafeManagedExplorerStop) {
+    throw 'Unsafe File Explorer termination detected. The installer must never stop explorer.exe.'
+}
 
 & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration
 if ($LASTEXITCODE -ne 0) { throw 'Application build failed.' }

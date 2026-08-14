@@ -1,10 +1,10 @@
-# STL & 3MF Thumbnail Preview for Windows
+# STL, 3MF & STEP Thumbnail Preview for Windows
 
-Fast STL, 3MF, OBJ, PLY, G-code and SOLIDWORKS thumbnail previews directly in Windows 10/11 File Explorer.
+Fast STL, 3MF, STEP, OBJ, PLY, G-code and SOLIDWORKS thumbnail previews directly in Windows 10/11 File Explorer.
 
 [Download the latest installer](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest)
 
-STL & 3MF Thumbnail Preview for Windows is a lightweight x64 `IThumbnailProvider`. It renders supported mesh and 3D-printing files locally and returns a static bitmap to Explorer's thumbnail cache. It does not open a preview window and never starts SOLIDWORKS while browsing folders.
+STL, 3MF & STEP Thumbnail Preview for Windows is a lightweight x64 `IThumbnailProvider`. It renders supported mesh and 3D-printing files locally and returns a static bitmap to Explorer's thumbnail cache. It does not open a preview window and never starts SOLIDWORKS while browsing folders.
 
 ## Supported formats
 
@@ -17,6 +17,12 @@ Rendered directly:
 - AMF;
 - OFF;
 - G-code (`.gcode`, `.gco`) toolpaths.
+- STEP (`.step`, `.stp`) — native AP242 tessellation when present, otherwise a lightweight B-rep wireframe.
+
+STEP support is intentionally lightweight and dependency-free. It produces solid thumbnails for files containing
+`TRIANGULATED_FACE` / `TRIANGULATED_SURFACE_SET`, reads faceted loops, and draws lines, circles, ellipses, polylines
+and B-spline edges from ordinary `ADVANCED_BREP` files. It does not evaluate or trim full CAD surfaces, so complex
+assemblies can appear as a partial wireframe.
 
 SOLIDWORKS and eDrawings:
 
@@ -27,11 +33,12 @@ The installer preserves an existing SOLIDWORKS/eDrawings thumbnail provider. If 
 
 ## Installation
 
-1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.4.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).
+1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.5.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).
 2. Select the extensions to handle.
 3. Confirm the Windows UAC prompt.
-4. Restart Windows when prompted so the old COM surrogate is unloaded and the thumbnail cache is rebuilt.
-5. Use Large icons or Extra large icons in File Explorer.
+4. The installer safely refreshes the dedicated thumbnail-cache COM surrogate without closing File Explorer.
+5. Restart Windows only if thumbnails do not appear immediately; the cache will be rebuilt during startup.
+6. Use Large icons or Extra large icons in File Explorer.
 
 The installer is currently unsigned, so Microsoft Defender SmartScreen may display an unknown-publisher warning.
 
@@ -47,6 +54,7 @@ Requirements:
 - Large binary STL files are sampled while streaming instead of being fully loaded into memory.
 - ASCII STL uses bounded reservoir sampling.
 - Non-STL inputs are limited to 64 MB; decompressed 3MF model XML is limited to 16 MB.
+- STEP parsing is capped at 300,000 entities, 200,000 triangles and 100,000 wireframe segments.
 - Output is capped at 1024×1024 pixels.
 - Explorer caches the generated bitmap.
 - No network requests, OpenGL/DirectX dependencies, NuGet packages or SOLIDWORKS Automation are used at runtime.
@@ -62,7 +70,7 @@ Requirements: Windows x64 and .NET 6 SDK.
 .\scripts\build-installer.ps1
 ```
 
-The installer is written to `artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.4.exe`.
+The installer is written to `artifacts\STL-3MF-Thumbnail-Preview-Windows-1.2.5.exe`.
 
 Run the smoke tests:
 
@@ -85,9 +93,9 @@ Previous thumbnail associations are restored during uninstall.
 
 ## Русский
 
-STL & 3MF Thumbnail Preview for Windows показывает миниатюры STL, 3MF, OBJ, PLY, AMF, OFF и G-code прямо в списке файлов Проводника Windows. Обработчик работает через системный `IThumbnailProvider`, не открывает отдельное окно и не запускает SOLIDWORKS при просмотре папки.
+STL, 3MF & STEP Thumbnail Preview for Windows показывает миниатюры STL, 3MF, STEP, OBJ, PLY, AMF, OFF и G-code прямо в списке файлов Проводника Windows. STEP с готовой триангуляцией отображается как объёмная модель, а обычный B-rep — как лёгкий каркас без внешнего CAD-ядра. Обработчик работает через системный `IThumbnailProvider`, не открывает отдельное окно и не запускает SOLIDWORKS при просмотре папки.
 
-Скачайте EXE из раздела [Releases](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest), выберите расширения и подтвердите UAC. После установки включите в Проводнике крупные или огромные значки.
+Скачайте EXE из раздела [Releases](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest), выберите расширения и подтвердите UAC. Установщик безопасно обновит отдельный процесс кэша миниатюр, не закрывая Проводник. Перезагрузите Windows только если миниатюры не появились сразу. После установки включите в Проводнике крупные или огромные значки.
 
 ## License
 

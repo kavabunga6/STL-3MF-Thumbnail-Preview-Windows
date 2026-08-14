@@ -70,7 +70,7 @@ internal sealed class InstallerForm : Form
 
     public InstallerForm()
     {
-        Text = "Установка STL & 3MF Thumbnail Preview";
+        Text = "Установка STL, 3MF & STEP Thumbnail Preview";
         ClientSize = new Size(720, 610);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -83,7 +83,7 @@ internal sealed class InstallerForm : Form
 
         var title = new Label
         {
-            Text = "STL & 3MF Thumbnail Preview", Location = new Point(32, 24), Size = new Size(650, 38),
+            Text = "STL, 3MF & STEP Thumbnail Preview", Location = new Point(32, 24), Size = new Size(650, 38),
             Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Color.FromArgb(25, 40, 56),
             UseMnemonic = false
         };
@@ -285,16 +285,18 @@ internal sealed class InstallerForm : Form
             if (process.ExitCode != 0) throw new InvalidOperationException(string.IsNullOrWhiteSpace(error) ? output : error);
 
             _progress.Visible = false;
-            _status.Text = $"Готово. Выбрано расширений: {selected.Length}. Требуется перезагрузка Windows.";
+            _status.Text = $"Готово. Выбрано расширений: {selected.Length}. Проводник не закрывался.";
             _status.ForeColor = Color.FromArgb(30, 125, 74);
-            _closeButton.Text = "Позже";
+            _closeButton.Text = "Закрыть";
             _closeButton.Enabled = true;
             _installButton.Visible = false;
             AcceptButton = _closeButton;
             var restartNow = MessageBox.Show(this,
-                "Установка завершена. Чтобы Windows выгрузила старый COM-обработчик и пересоздала кэш миниатюр, " +
-                "необходимо перезагрузить компьютер. Перезагрузить сейчас?",
-                "Требуется перезагрузка", MessageBoxButtons.YesNo, MessageBoxIcon.Information,
+                "Установка завершена. Отдельный процесс кэша миниатюр был безопасно обновлён — " +
+                "Проводник, рабочий стол и панель задач не закрывались.\n\n" +
+                "Если миниатюры не появились сразу, перезагрузите Windows: при запуске система пересоздаст кэш. " +
+                "Перезагрузить сейчас?",
+                "Перезагрузка при необходимости", MessageBoxButtons.YesNo, MessageBoxIcon.Information,
                 MessageBoxDefaultButton.Button2) == DialogResult.Yes;
             if (restartNow)
             {
