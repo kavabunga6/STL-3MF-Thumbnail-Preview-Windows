@@ -8,6 +8,7 @@ namespace Explorer3DPreview.UI;
 internal static class ThumbnailRenderer
 {
     private readonly record struct Projected(PointF A, PointF B, PointF C, float Depth, int Shade);
+    private readonly record struct ProjectedSegment(PointF A, PointF B, float Depth);
 
     internal static Bitmap Render(MeshData mesh, int size)
     {
@@ -42,6 +43,18 @@ internal static class ThumbnailRenderer
         }
         triangles.Sort(static (left, right) => left.Depth.CompareTo(right.Depth));
 
+        var segments = new List<ProjectedSegment>(mesh.Segments.Count);
+        foreach (var segment in mesh.Segments)
+        {
+            var a = Vector3.Transform(segment.A - mesh.Center, rotation);
+            var b = Vector3.Transform(segment.B - mesh.Center, rotation);
+            segments.Add(new ProjectedSegment(
+                new PointF(centerX + a.X * scale, centerY - a.Y * scale),
+                new PointF(centerX + b.X * scale, centerY - b.Y * scale),
+                (a.Z + b.Z) * 0.5f));
+        }
+        segments.Sort(static (left, right) => left.Depth.CompareTo(right.Depth));
+
         var brushes = Enumerable.Range(0, 32).Select(index =>
         {
             var factor = index / 31f;
@@ -69,6 +82,16 @@ internal static class ThumbnailRenderer
                     graphics.FillRectangle(brush, triangle.B.X, triangle.B.Y, pointSize, pointSize);
                     graphics.FillRectangle(brush, triangle.C.X, triangle.C.Y, pointSize, pointSize);
                 }
+            }
+            if (segments.Count > 0)
+            {
+                using var wire = new Pen(Color.FromArgb(225, 31, 83, 118), Math.Max(1.0f, size / 190f))
+                {
+                    StartCap = LineCap.Round,
+                    EndCap = LineCap.Round,
+                    LineJoin = LineJoin.Round
+                };
+                foreach (var segment in segments) graphics.DrawLine(wire, segment.A, segment.B);
             }
         }
         finally

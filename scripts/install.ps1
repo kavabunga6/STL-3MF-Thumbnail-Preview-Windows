@@ -10,7 +10,7 @@ $oldPreviewClassIds = @('{F1A470E4-6AA0-45FC-BE6F-A93E420A7BD7}','{025DEA72-D29D
 $thumbnailInterface = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $previewInterface = '{8895B1C6-B41F-4C1C-A562-0D564250836F}'
 $installDirectory = Join-Path $env:ProgramFiles 'Explorer3DPreview'
-$packageVersion = '1.2.4'
+$packageVersion = '1.2.5'
 $packagesDirectory = Join-Path $installDirectory 'packages'
 # Explorer may keep the current COM host loaded for the whole session. Deploying each
 # install to a fresh directory makes repair/reinstall safe without killing Explorer.
@@ -41,10 +41,10 @@ if (-not $runtimeInstalled) {
     throw '.NET 6 Desktop Runtime x64 was not found. Install it from https://dotnet.microsoft.com/download/dotnet/6.0'
 }
 
-$directExtensions = @('.stl','.3mf','.obj','.ply','.amf','.off','.gcode','.gco')
+$directExtensions = @('.stl','.3mf','.obj','.ply','.amf','.off','.gcode','.gco','.step','.stp')
 $embeddedExtensions = @('.sldprt','.sdlprt','.sldasm','.slddrw','.prtdot','.asmdot','.drwdot','.eprt','.easm','.edrw')
 $legacyCleanupExtensions = @(
-    '.step','.stp','.stpz','.iges','.igs','.x_t','.x_b','.xmt_txt','.xmt_bin','.sat','.sab',
+    '.stpz','.iges','.igs','.x_t','.x_b','.xmt_txt','.xmt_bin','.sat','.sab',
     '.ifc','.vda','.wrl','.vrml','.3dxml','.jt','.3dm','.catpart','.catproduct','.ipt','.iam',
     '.prt','.asm','.neu','.xpr','.xas','.par','.psm','.pwd','.dxf','.dwg'
 )
@@ -138,7 +138,7 @@ foreach ($handler in @(
 
 $approvedExtensions = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved'
 if (-not (Test-Path $approvedExtensions)) { New-Item -Path $approvedExtensions -Force | Out-Null }
-New-ItemProperty -Path $approvedExtensions -Name $meshClassId -Value 'STL & 3MF Mesh Thumbnail Provider' `
+New-ItemProperty -Path $approvedExtensions -Name $meshClassId -Value 'STL, 3MF & STEP Mesh Thumbnail Provider' `
     -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $approvedExtensions -Name $embeddedClassId -Value 'SOLIDWORKS Embedded Thumbnail Provider' `
     -PropertyType String -Force | Out-Null
@@ -216,9 +216,9 @@ $uninstallCommand = "`"$powerShellExe`" -NoProfile -ExecutionPolicy Bypass -File
 $displayIcon = Join-Path $versionDirectory 'Explorer3DPreview.ico'
 $installedSizeKb = [Math]::Ceiling(((Get-ChildItem $installDirectory -File -Recurse | Measure-Object Length -Sum).Sum) / 1KB)
 New-Item -Path $uninstallKey -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'STL & 3MF Thumbnail Preview for Windows' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value 'STL, 3MF & STEP Thumbnail Preview for Windows' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'DisplayVersion' -Value $packageVersion -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'STL & 3MF Thumbnail Preview' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value 'STL, 3MF & STEP Thumbnail Preview' -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'InstallLocation' -Value $installDirectory -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'DisplayIcon' -Value $displayIcon -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name 'UninstallString' -Value $uninstallCommand -PropertyType String -Force | Out-Null
@@ -235,7 +235,7 @@ Set-Content -LiteralPath (Join-Path $installDirectory 'current-package.txt') -Va
 Get-ChildItem -LiteralPath $packagesDirectory -Directory -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -ne $versionDirectory } |
     ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
-# Remove pre-1.2.4 version folders when they are not held by an older Shell process.
+# Remove legacy version folders when they are not held by an older Shell process.
 Get-ChildItem -LiteralPath $installDirectory -Directory -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -ne 'packages' } |
     ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
@@ -254,6 +254,52 @@ public static class Explorer3DShellNotify {
 # until open Explorer windows have processed the new handler registration.
 [Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
 Start-Sleep -Milliseconds 750
+
+# Reload only Windows' dedicated thumbnail-cache COM surrogate. Never terminate
+# explorer.exe: open folders, the desktop and the taskbar must remain untouched.
+# The process is selected by both its session and the exact system AppID. If the
+# command line cannot be inspected or no exact match exists, leave every process
+# running and let the next Windows restart perform the refresh.
+$thumbnailCacheAppId = '{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'
+$thumbnailCacheToken = "/Processid:$thumbnailCacheAppId"
+$currentSessionId = (Get-Process -Id $PID -ErrorAction Stop).SessionId
+$restartedSurrogates = 0
+try {
+    $thumbnailSurrogates = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'dllhost.exe'" `
+        -ErrorAction Stop | Where-Object {
+            [int]$_.SessionId -eq $currentSessionId -and
+            -not [string]::IsNullOrWhiteSpace([string]$_.CommandLine) -and
+            ([string]$_.CommandLine).IndexOf($thumbnailCacheToken, [StringComparison]::OrdinalIgnoreCase) -ge 0
+    })
+    foreach ($surrogate in $thumbnailSurrogates) {
+        # Recheck the name, session and AppID immediately before stopping the
+        # process so a recycled PID cannot target an unrelated COM surrogate.
+        $liveDetails = Get-CimInstance -ClassName Win32_Process `
+            -Filter "ProcessId = $([int]$surrogate.ProcessId)" -ErrorAction SilentlyContinue
+        if ($null -eq $liveDetails -or
+            -not ([string]$liveDetails.Name).Equals('dllhost.exe', [StringComparison]::OrdinalIgnoreCase) -or
+            [int]$liveDetails.SessionId -ne $currentSessionId -or
+            [string]::IsNullOrWhiteSpace([string]$liveDetails.CommandLine) -or
+            ([string]$liveDetails.CommandLine).IndexOf($thumbnailCacheToken, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
+            continue
+        }
+        $liveProcess = Get-Process -Id ([int]$liveDetails.ProcessId) -ErrorAction SilentlyContinue
+        if ($null -eq $liveProcess -or
+            -not $liveProcess.ProcessName.Equals('dllhost', [StringComparison]::OrdinalIgnoreCase) -or
+            $liveProcess.SessionId -ne $currentSessionId) {
+            continue
+        }
+        Stop-Process -Id $liveProcess.Id -Force -ErrorAction Stop
+        $restartedSurrogates++
+    }
+} catch {
+    Write-Warning "Thumbnail cache surrogate was not restarted: $($_.Exception.Message)"
+}
+
+if ($restartedSurrogates -gt 0) {
+    Start-Sleep -Milliseconds 500
+    [Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+}
 
 # Existing negative thumbnail entries survive Explorer restarts. Schedule only
 # Windows' regenerable thumbnail databases for deletion during the next reboot,

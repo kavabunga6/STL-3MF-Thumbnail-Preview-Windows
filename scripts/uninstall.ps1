@@ -68,4 +68,4 @@ public static class Explorer3DShellNotify {
 '@
 [Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
 Start-Sleep -Milliseconds 750
-Write-Host 'STL & 3MF Thumbnail Preview handlers were removed.' -ForegroundColor Green
+Write-Host 'STL, 3MF & STEP Thumbnail Preview handlers were removed.' -ForegroundColor Green
