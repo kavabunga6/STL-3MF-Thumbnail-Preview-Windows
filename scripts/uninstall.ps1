@@ -60,5 +60,6 @@ public static class Explorer3DShellNotify {
     [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
 '@
-[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
+[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+Start-Sleep -Milliseconds 750
 Write-Host 'STL & 3MF Thumbnail Preview handlers were removed.' -ForegroundColor Green

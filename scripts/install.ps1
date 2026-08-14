@@ -43,12 +43,12 @@ if (-not $runtimeInstalled) {
 
 $directExtensions = @('.stl','.3mf','.obj','.ply','.amf','.off','.gcode','.gco')
 $embeddedExtensions = @('.sldprt','.sdlprt','.sldasm','.slddrw','.prtdot','.asmdot','.drwdot','.eprt','.easm','.edrw')
-$externalExtensions = @(
+$legacyCleanupExtensions = @(
     '.step','.stp','.stpz','.iges','.igs','.x_t','.x_b','.xmt_txt','.xmt_bin','.sat','.sab',
     '.ifc','.vda','.wrl','.vrml','.3dxml','.jt','.3dm','.catpart','.catproduct','.ipt','.iam',
     '.prt','.asm','.neu','.xpr','.xas','.par','.psm','.pwd','.dxf','.dwg'
 )
-$allExtensions = @($directExtensions + $embeddedExtensions + $externalExtensions)
+$allExtensions = @($directExtensions + $embeddedExtensions)
 
 $selectionStore = Join-Path $installDirectory 'extensions.txt'
 if (-not [string]::IsNullOrWhiteSpace($ExtensionsFile) -and (Test-Path -LiteralPath $ExtensionsFile)) {
@@ -84,7 +84,7 @@ if (Test-Path $legacyBackupRoot) {
     Get-ChildItem $legacyBackupRoot | ForEach-Object { Restore-BackupKey -BackupKey $_ -OurClassIds $oldPreviewClassIds }
     Remove-Item -Path $legacyBackupRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
-foreach ($extension in $allExtensions) {
+foreach ($extension in @($allExtensions + $legacyCleanupExtensions)) {
     $extensionKey = "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Classes\$extension"
     $progId = if (Test-Path $extensionKey) { (Get-Item $extensionKey).GetValue('') } else { $null }
     $paths = @(
@@ -154,7 +154,7 @@ function Save-And-SetThumbnailAssociation {
     Set-Item -Path $Path -Value $ClassId
 }
 
-foreach ($extension in $allExtensions) {
+foreach ($extension in @($allExtensions + $legacyCleanupExtensions)) {
     if ($selectedExtensions -contains $extension) { continue }
     $safeName = $extension.TrimStart('.')
     if (Test-Path $thumbnailBackupRoot) {
@@ -238,5 +238,8 @@ public static class Explorer3DShellNotify {
     [DllImport("shell32.dll")] public static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
 '@
-[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
+# SHCNE_ASSOCCHANGED invalidates the icon/thumbnail cache. SHCNF_FLUSH waits
+# until open Explorer windows have processed the new handler registration.
+[Explorer3DShellNotify]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+Start-Sleep -Milliseconds 750
 Write-Host "Installed: $registeredCount thumbnail providers added; $preservedCount existing providers preserved." -ForegroundColor Green

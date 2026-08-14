@@ -25,8 +25,6 @@ SOLIDWORKS and eDrawings:
 
 The installer preserves an existing SOLIDWORKS/eDrawings thumbnail provider. If none exists, it attempts to use the preview image embedded in the compound document without launching SOLIDWORKS.
 
-Neutral and third-party CAD extensions such as STEP, IGES, Parasolid, ACIS, IFC, JT, CATIA, Inventor, Creo/NX, Solid Edge, DXF and DWG can be selected in the installer. Existing lightweight system/CAD thumbnail providers are preserved; this project does not launch a full CAD application for each file in a folder.
-
 ## Installation
 
 1. Download `STL-3MF-Thumbnail-Preview-Windows-1.2.3.exe` from the [latest release](https://github.com/kavabunga6/STL-3MF-Thumbnail-Preview-Windows/releases/latest).

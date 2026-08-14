@@ -111,8 +111,8 @@ internal sealed class InstallerForm : Form
 
         var note = new Label
         {
-            Text = "Открытые сетки рендерятся локально. Штатные обработчики SOLIDWORKS/eDrawings сохраняются; " +
-                   "для остальных CAD используются только уже установленные лёгкие обработчики. SOLIDWORKS не запускается.",
+            Text = "Открытые сетки рендерятся локально. Для SOLIDWORKS/eDrawings извлекается встроенная миниатюра; " +
+                   "уже установленный штатный обработчик сохраняется. SOLIDWORKS не запускается.",
             Location = new Point(35, 495), Size = new Size(650, 38), ForeColor = Color.FromArgb(95, 108, 122)
         };
         _status = new Label
