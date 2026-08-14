@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 
 namespace Explorer3DPreview.Setup;
 
@@ -270,7 +271,9 @@ internal sealed class InstallerForm : Form
                 FileName = powerShell,
                 Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{script}\" -ExtensionsFile \"{selectionFile}\"",
                 UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardOutput = true, RedirectStandardError = true
+                RedirectStandardOutput = true, RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
             };
             using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Не удалось запустить установку.");
             var outputTask = process.StandardOutput.ReadToEndAsync();

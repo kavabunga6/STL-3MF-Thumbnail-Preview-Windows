@@ -9,7 +9,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $setupProject = Join-Path $root 'Explorer3DPreview.Setup\Explorer3DPreview.Setup.csproj'
 $publishDirectory = Join-Path $root 'artifacts\setup-publish'
 $verifyDirectory = Join-Path $root 'artifacts\setup-verify'
-$installerPath = Join-Path $root 'artifacts\Explorer3DThumbnails-Setup-1.2.2.exe'
+$installerPath = Join-Path $root 'artifacts\Explorer3DThumbnails-Setup-1.2.3.exe'
 $legacyIExpressDirectory = Join-Path $root 'artifacts\installer-build'
 
 & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration

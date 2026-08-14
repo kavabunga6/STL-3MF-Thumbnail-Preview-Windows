@@ -29,7 +29,7 @@ Neutral and third-party CAD extensions such as STEP, IGES, Parasolid, ACIS, IFC,
 
 ## Installation
 
-1. Download `Explorer3DThumbnails-Setup-1.2.2.exe` from the [latest release](https://github.com/kavabunga6/Explorer3DThumbnails/releases/latest).
+1. Download `Explorer3DThumbnails-Setup-1.2.3.exe` from the [latest release](https://github.com/kavabunga6/Explorer3DThumbnails/releases/latest).
 2. Select the extensions to handle.
 3. Confirm the Windows UAC prompt.
 4. Use Large icons or Extra large icons in File Explorer.
@@ -63,7 +63,7 @@ Requirements: Windows x64 and .NET 6 SDK.
 .\scripts\build-installer.ps1
 ```
 
-The installer is written to `artifacts\Explorer3DThumbnails-Setup-1.2.2.exe`.
+The installer is written to `artifacts\Explorer3DThumbnails-Setup-1.2.3.exe`.
 
 Run the smoke tests:
 

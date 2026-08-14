@@ -16,7 +16,7 @@
     <SelfContained>false</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>embedded</DebugType>
-    <Version>1.2.2</Version>
+    <Version>1.2.3</Version>
     <AssemblyTitle>Explorer 3D Thumbnails Setup</AssemblyTitle>
     <Product>Explorer 3D Thumbnails</Product>
     <Company>Explorer 3D Thumbnails</Company>
