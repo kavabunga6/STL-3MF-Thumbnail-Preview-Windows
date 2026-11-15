@@ -4,17 +4,20 @@ internal static class ThumbnailMeshLoader
 {
     private const long MaximumNonStlFileSize = 64L * 1024 * 1024;
 
+    // The z-buffer renderer draws every triangle, so dense models stay closed surfaces instead of turning into dots.
+    private const int MaxThumbnailTriangles = 750_000;
+
     internal static MeshData Read(string path)
     {
         var extension = Path.GetExtension(path);
         if (extension.Equals(".stl", StringComparison.OrdinalIgnoreCase))
-            return StlReader.ReadForThumbnail(path, 30_000);
+            return StlReader.ReadForThumbnail(path, MaxThumbnailTriangles);
 
         var info = new FileInfo(path);
         if (info.Length > MaximumNonStlFileSize)
             throw new InvalidDataException("Файл слишком велик для безопасной генерации миниатюры.");
 
-        return Sample(MeshFileLoader.Read(path), 30_000);
+        return Sample(MeshFileLoader.Read(path), MaxThumbnailTriangles);
     }
 
     internal static MeshData Read(Stream stream)
@@ -24,10 +27,10 @@ internal static class ThumbnailMeshLoader
             throw new InvalidDataException("Файл слишком велик для безопасной генерации миниатюры.");
         var extension = StreamFormatDetector.Detect(stream);
         stream.Position = 0;
-        if (extension == ".stl") return StlReader.ReadForThumbnail(stream, 30_000);
+        if (extension == ".stl") return StlReader.ReadForThumbnail(stream, MaxThumbnailTriangles);
         if (stream.Length > MaximumNonStlFileSize)
             throw new InvalidDataException("Файл слишком велик для безопасной генерации миниатюры.");
-        return Sample(MeshFileLoader.Read(stream, extension), 30_000);
+        return Sample(MeshFileLoader.Read(stream, extension), MaxThumbnailTriangles);
     }
 
     private static MeshData Sample(MeshData mesh, int limit)

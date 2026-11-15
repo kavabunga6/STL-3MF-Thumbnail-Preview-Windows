@@ -41,6 +41,46 @@ public sealed class MeshThumbnailProvider : IThumbnailProvider, IInitializeWithF
         try
         {
             var requestedSize = Math.Clamp((int)size, 32, 1024);
+
+            // G-code: embedded slicer preview if present, otherwise a shaded, height-coloured toolpath render.
+            if (_filePath is not null && GCodeThumbnail.IsGCodeExtension(_filePath))
+            {
+                using var gcodeBitmap = GCodeThumbnail.Render(_filePath, requestedSize);
+                bitmap = gcodeBitmap.GetHbitmap(Color.White);
+                return bitmap == IntPtr.Zero ? NativeMethods.E_FAIL : NativeMethods.S_OK;
+            }
+            if (_stream is not null)
+            {
+                var comStream = new ComReadStream(_stream);
+                var detected = comStream.CanSeek && comStream.Length > 6 ? StreamFormatDetector.Detect(comStream) : null;
+                if (detected == ".gcode")
+                {
+                    using var gcodeBitmap = GCodeThumbnail.Render(comStream, requestedSize);
+                    bitmap = gcodeBitmap.GetHbitmap(Color.White);
+                    return bitmap == IntPtr.Zero ? NativeMethods.E_FAIL : NativeMethods.S_OK;
+                }
+                if (detected == ".3mf")
+                {
+                    using var streamPreview = ThreeMfThumbnail.TryRender(comStream, requestedSize);
+                    if (streamPreview is not null)
+                    {
+                        bitmap = streamPreview.GetHbitmap(Color.White);
+                        if (bitmap != IntPtr.Zero) return NativeMethods.S_OK;
+                    }
+                }
+            }
+
+            // 3MF: use the preview the slicer stored in the package (PrusaSlicer, Orca, Bambu Studio...), if any.
+            if (_filePath is not null && _filePath.EndsWith(".3mf", StringComparison.OrdinalIgnoreCase))
+            {
+                using var filePreview = ThreeMfThumbnail.TryRender(_filePath, requestedSize);
+                if (filePreview is not null)
+                {
+                    bitmap = filePreview.GetHbitmap(Color.White);
+                    if (bitmap != IntPtr.Zero) return NativeMethods.S_OK;
+                }
+            }
+
             var mesh = _filePath is not null
                 ? ThumbnailMeshLoader.Read(_filePath)
                 : ThumbnailMeshLoader.Read(new ComReadStream(_stream!));
