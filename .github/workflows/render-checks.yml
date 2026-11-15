@@ -1,0 +1,111 @@
+name: Render regression check
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      baseline_ref:
+        description: Branch, tag or SHA to compare against
+        required: true
+        default: main
+      candidate_ref:
+        description: Optional candidate ref (for example refs/pull/4/merge)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-checks:
+    name: Render correctness and performance
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      BASELINE_REF: ${{ github.event.pull_request.base.sha || inputs.baseline_ref || github.event.before || github.sha }}
+      # pull_request uses GitHub's merge commit, so older PRs also receive the current test harness.
+      CANDIDATE_REF: ${{ inputs.candidate_ref || github.sha }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.CANDIDATE_REF }}
+          path: candidate
+          persist-credentials: false
+
+      - name: Check out baseline
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.BASELINE_REF }}
+          path: baseline
+          persist-credentials: false
+
+      - name: Install .NET 6 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 6.0.428
+
+      - name: Select identical SDK for both builds
+        run: |
+          '{"sdk":{"version":"6.0.428","rollForward":"disable"}}' |
+            Set-Content -LiteralPath global.json -Encoding utf8
+          dotnet --info
+
+      - name: Build candidate and benchmark harness
+        run: |
+          dotnet build candidate/Explorer3DPreview.sln -c Release -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build baseline renderer
+        run: |
+          dotnet build baseline/Explorer3DPreview/Explorer3DPreview.csproj -c Release -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run smoke tests and benchmark self-tests
+        run: |
+          dotnet candidate/Explorer3DPreview.Tests/bin/x64/Release/net6.0-windows/Explorer3DPreview.Tests.dll
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet candidate/Explorer3DPreview.Benchmarks/bin/x64/Release/net6.0-windows/Explorer3DPreview.Benchmarks.dll --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Compare renderers on the same runner
+        run: |
+          $baselineSha = git -C baseline rev-parse HEAD
+          $candidateSha = git -C candidate rev-parse HEAD
+          dotnet candidate/Explorer3DPreview.Benchmarks/bin/x64/Release/net6.0-windows/Explorer3DPreview.Benchmarks.dll `
+            baseline/Explorer3DPreview/bin/x64/Release/net6.0-windows/Explorer3DPreview.dll `
+            candidate/Explorer3DPreview/bin/x64/Release/net6.0-windows/Explorer3DPreview.dll `
+            candidate/artifacts/render-benchmarks $baselineSha $candidateSha
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Add results to job summary
+        if: always()
+        run: |
+          $summary = 'candidate/artifacts/render-benchmarks/summary.md'
+          if (Test-Path -LiteralPath $summary) {
+            Get-Content -LiteralPath $summary -Raw | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Upload timings and preview images
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: render-comparison
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            candidate/artifacts/render-benchmarks/report.json
+            candidate/artifacts/render-benchmarks/summary.md
+            candidate/artifacts/render-benchmarks/index.html
+            candidate/artifacts/render-benchmarks/runs/**/images/*.png
+            candidate/artifacts/render-benchmarks/runs/**/raw/*.json

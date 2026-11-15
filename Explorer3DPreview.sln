@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Explorer3DPreview", "Explor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Explorer3DPreview.Tests", "Explorer3DPreview.Tests\Explorer3DPreview.Tests.csproj", "{3D83C164-65B0-48E9-85C5-F8C25F46FF52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Explorer3DPreview.Benchmarks", "Explorer3DPreview.Benchmarks\Explorer3DPreview.Benchmarks.csproj", "{A3E01C92-DE7C-4C82-8411-52FCFCAACEBB}"
+EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
         Debug|x64 = Debug|x64
@@ -20,5 +22,9 @@ Global
         {3D83C164-65B0-48E9-85C5-F8C25F46FF52}.Debug|x64.Build.0 = Debug|x64
         {3D83C164-65B0-48E9-85C5-F8C25F46FF52}.Release|x64.ActiveCfg = Release|x64
         {3D83C164-65B0-48E9-85C5-F8C25F46FF52}.Release|x64.Build.0 = Release|x64
+        {A3E01C92-DE7C-4C82-8411-52FCFCAACEBB}.Debug|x64.ActiveCfg = Debug|x64
+        {A3E01C92-DE7C-4C82-8411-52FCFCAACEBB}.Debug|x64.Build.0 = Debug|x64
+        {A3E01C92-DE7C-4C82-8411-52FCFCAACEBB}.Release|x64.ActiveCfg = Release|x64
+        {A3E01C92-DE7C-4C82-8411-52FCFCAACEBB}.Release|x64.Build.0 = Release|x64
     EndGlobalSection
 EndGlobal

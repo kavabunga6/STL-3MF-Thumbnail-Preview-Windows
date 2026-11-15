@@ -81,6 +81,8 @@ dotnet exec .\Explorer3DPreview.Tests\bin\x64\Release\net6.0-windows\Explorer3DP
 
 Tests cover the mesh readers, stream-based Shell initialization, `HBITMAP` generation, embedded PNG decoding and thumbnail size/time limits.
 
+Pull requests also run [render regression checks](docs/render-benchmarks.md) on Windows: 36 scenarios compare the PR with its base commit on the same runner, enforce timeouts and read-only inputs, and upload timings plus side-by-side preview images.
+
 ## Uninstall
 
 Use Windows Installed apps, or run:
